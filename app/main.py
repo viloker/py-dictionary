@@ -88,8 +88,25 @@ class Dictionary:
 
     def __delitem__(self, key: Any) -> None:
         index = hash(key) % self.__max_capacity__
-        self.__capacity__[index] = None
-        self._size -= 1
+        value = self.__capacity__[index]
+        if value is not None:
+            if value[0] == key:
+                self.__capacity__[index] = None
+                self._size -= 1
+
+            else:
+                index += 1
+
+                for _ in range(self.__max_capacity__):
+                    if index == self.__max_capacity__:
+                        index = 0
+
+                    value = self.__capacity__[index]
+                    if value is None:
+                        raise KeyError(f"Not existing the key '{key}'")
+                    if value[0] == key:
+                        self.__capacity__[index] = None
+                        self._size -= 1
 
     def __iter__(self) -> Any:
         for item in self.__capacity__:
@@ -114,8 +131,7 @@ class Dictionary:
 
     def pop(self, key: Any) -> None:
         index = int(hash(key) * 2 / 3)
-        self.__capacity__[index] = None
-        self._size -= 1
+        del self.__capacity__[index]
 
     def update(self, items: Any) -> None:
         for item in items:
