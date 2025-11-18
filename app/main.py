@@ -8,6 +8,7 @@ class Dictionary:
         self.__capacity__ = [None for _ in range(self.__max_capacity__)]
         self.__load_factor__ = 5
         self._size = 0
+        self.__keys__ = []
 
     def __setitem__(self, key: Any, value: Any) -> None:
         if self._size > self.__load_factor__:
@@ -31,6 +32,7 @@ class Dictionary:
         if not isinstance(self.__capacity__[stay_number], tuple):
             self.__capacity__[stay_number] = (key, value, hash_key)
             self._size += 1
+            self.__keys__.append(key)
 
         else:
             existing = self.__capacity__[stay_number]
@@ -47,6 +49,7 @@ class Dictionary:
                     if not isinstance(self.__capacity__[index], tuple):
                         self.__capacity__[index] = (key, value, hash_key)
                         self._size += 1
+                        self.__keys__.append(key)
                         return
 
                     elif self.__capacity__[index][0] == key:
@@ -54,6 +57,9 @@ class Dictionary:
                         return
 
     def __getitem__(self, item: Any) -> Any:
+        if item not in self.__keys__:
+            raise KeyError(f"Not existing the key '{item}'")
+
         hash_key = hash(item)
         stay_number = hash_key % self.__max_capacity__
 
@@ -75,7 +81,6 @@ class Dictionary:
                         raise KeyError(f"Not existing the key '{item}'")
                     if value[0] == item and value[2] == hash_key:
                         return value[1]
-        raise KeyError(f"Not existing the key '{item}'")
 
     def __len__(self) -> int:
         return self._size
@@ -87,26 +92,7 @@ class Dictionary:
                                if isinstance(item, tuple)) + "}"
 
     def __delitem__(self, key: Any) -> None:
-        index = hash(key) % self.__max_capacity__
-        value = self.__capacity__[index]
-        if value is not None:
-            if value[0] == key:
-                self.__capacity__[index] = None
-                self._size -= 1
-
-            else:
-                index += 1
-
-                for _ in range(self.__max_capacity__):
-                    if index == self.__max_capacity__:
-                        index = 0
-
-                    value = self.__capacity__[index]
-                    if value is None:
-                        raise KeyError(f"Not existing the key '{key}'")
-                    if value[0] == key:
-                        self.__capacity__[index] = None
-                        self._size -= 1
+        return self.pop(key)
 
     def __iter__(self) -> Any:
         for item in self.__capacity__:
@@ -120,18 +106,33 @@ class Dictionary:
         self._size = 0
 
     def get(self, key: Any) -> Any:
-        index = hash(key) % self.__max_capacity__
-        value = self.__capacity__[index]
-        if value is not None:
-            try:
-                value = self[key]
-                return value
-            except KeyError:
-                return None
+        if key not in self.__keys__:
+            return None
+
+        try:
+            value = self[key]
+            return value
+        except KeyError:
+            return None
 
     def pop(self, key: Any) -> None:
-        index = int(hash(key) * 2 / 3)
-        del self.__capacity__[index]
+        if key not in self.__keys__:
+            raise KeyError(f"Not existing the key '{key}'")
+
+        index = hash(key) % self.__max_capacity__
+
+        for _ in range(self.__max_capacity__):
+            if index == self.__max_capacity__:
+                index = 0
+
+            value = self.__capacity__[index]
+            if value is not None:
+                if value[0] == key:
+                    self.__capacity__[index] = None
+                    self._size -= 1
+                    self.__keys__.remove(key)
+
+            index += 1
 
     def update(self, items: Any) -> None:
         for item in items:
